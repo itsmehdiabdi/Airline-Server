@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS aircraft
     layout_id    INTEGER    NOT NULL REFERENCES aircraft_layout ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE VIEW aircraft_view AS
+CREATE OR REPLACE VIEW aircraft_view AS
 SELECT aircraft.registration                                                                   as registration,
        CONCAT(aircraft_type.manufacturer, ' ', aircraft_type.model, '-', aircraft_type.series) as aircraft_type,
        aircraft_type.type_id                                                                   as type_id,
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS airport
 
 CREATE INDEX ON airport (country_name, city_name);
 
-CREATE VIEW origin_destination AS
+CREATE OR REPLACE VIEW origin_destination AS
 SELECT country_name as county,
        city_name    as city,
        airport_name as airport,
@@ -75,7 +75,7 @@ SELECT country_name   as county,
        'ALL'          as iata
 FROM city;
 
-CREATE VIEW airport_timezone AS
+CREATE OR REPLACE VIEW airport_timezone AS
 SELECT airport.iata_code, city.timezone_name
 FROM airport
          JOIN city ON city.country_name = airport.country_name AND city.city_name = airport.city_name;
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS purchase
 
 -- OFFERS
 
-CREATE VIEW available_offers AS
+CREATE OR REPLACE VIEW available_offers AS
 SELECT flight.flight_id                                        AS flight_id,
        flight.origin                                           AS origin,
        flight.destination                                      AS destination,
