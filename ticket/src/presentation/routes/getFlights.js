@@ -1,3 +1,4 @@
+// TODO: get dep, des, from, to?, passengers? and give available flights in respond.
 export const getFlights = {
   endpoint: "flights",
   method: "GET",
