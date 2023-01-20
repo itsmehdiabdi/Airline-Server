@@ -126,3 +126,26 @@ func Login(c *gin.Context) {
 	// Return the success message
 	c.JSON(http.StatusOK, gin.H{"message": "user logged in successfully"})
 }
+
+func GetUser(c *gin.Context) {
+	// Get the cookie from the request
+	cookie, _ := c.Cookie("token")
+
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(cookie, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Get the user account from the database
+	userId := claims["userId"].(float64)
+	var user models.UserAccount
+	initializers.DB.Where("id = ?", userId).First(&user)
+
+	// Return the user account
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}

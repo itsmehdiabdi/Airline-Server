@@ -18,6 +18,7 @@ func main() {
 	// Routes
 	r.POST("/signup", controllers.Signup)
 	r.POST("/login", controllers.Login)
+	r.GET("/user", controllers.GetUser)
 
 	// Run the server
 	r.Run()
