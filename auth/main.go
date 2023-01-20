@@ -16,9 +16,10 @@ func main() {
 	r := gin.Default()
 
 	// Routes
-	r.POST("/signup", controllers.Signup)
-	r.POST("/login", controllers.Login)
-	r.GET("/user", controllers.GetUser)
+	r.POST("/api/signup", controllers.Signup)
+	r.POST("/api/login", controllers.Login)
+	r.GET("/api/user", controllers.GetUser)
+	r.DELETE("/api/logout", controllers.Logout)
 
 	// Run the server
 	r.Run()

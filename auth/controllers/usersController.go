@@ -131,6 +131,7 @@ func GetUser(c *gin.Context) {
 	// Get the cookie from the request
 	cookie, _ := c.Cookie("token")
 
+	// Parse the token
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(cookie, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
@@ -141,6 +142,15 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	// check unauthorized tokens table
+	var unauthorizedToken models.UnauthorizedToken
+	initializers.DB.Where("token = ?", cookie).First(&unauthorizedToken)
+
+	if unauthorizedToken.UserID != 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized token"})
+		return
+	}
+
 	// Get the user account from the database
 	userId := claims["userId"].(float64)
 	var user models.UserAccount
@@ -148,4 +158,46 @@ func GetUser(c *gin.Context) {
 
 	// Return the user account
 	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+func Logout(c *gin.Context) {
+	// Get the cookie from the request
+	cookie, _ := c.Cookie("token")
+
+	// Get the user account from the database
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(cookie, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userId := claims["userId"].(float64)
+	var user models.UserAccount
+	initializers.DB.Where("id = ?", userId).First(&user)
+
+	// Store the token in the unauthorized tokens table
+	unauthorizedToken := models.UnauthorizedToken{
+		UserID:     user.ID,
+		User:       user,
+		Token:      cookie,
+		Expiration: time.Now().Add(time.Hour * 24), // TODO: use claims["exp"]
+	}
+
+	result := initializers.DB.Create(&unauthorizedToken)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while logging out"})
+		return
+	}
+
+	// Delete the cookie
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("token", "", -1, "/", "", false, true)
+
+	// Return the success message
+	c.JSON(http.StatusOK, gin.H{"message": "user logged out successfully"})
 }
