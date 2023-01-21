@@ -26,8 +26,9 @@ const endpoints = (
 endpoints.forEach(({ endpoint, method, handler, private: priv }) => {
   console.log(`${method}\t/${endpoint}`);
   const finalHandler = handleAsyncErrors(handler);
+  const finalAuthorizationMiddleware = handleAsyncErrors(authorizationMiddleware)
   const finalHandlerList = priv
-    ? [authorizationMiddleware, finalHandler]
+    ? [finalAuthorizationMiddleware, finalHandler]
     : [finalHandler];
   router[method.toLowerCase()](`/${endpoint}`, ...finalHandlerList);
 });
