@@ -1,9 +1,19 @@
-// TODO: no params, just respond all countries.
+import db from "../../database/db.js";
+
+//no params, just respond all countries.
 export const getCountries = {
   endpoint: "countries",
   method: "GET",
   private: false,
   handler: async (req, res) => {
-    res.status(200).json("get all countries");
+    let queryText,
+      queryResult,
+      countries,
+      values = [];
+    queryText = "SELECT * FROM country ORDER BY country_name ASC" ;
+    queryResult = await db.query(queryText, values);
+    countries = queryResult.rows;
+
+    res.status(200).json(countries);
   },
 };
