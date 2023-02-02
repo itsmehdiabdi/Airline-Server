@@ -44,6 +44,7 @@ export const buyTicket = {
           insertPurchaseQueryValues
         );
       }
+      await updateCapacity(layout_id, flight_class, capacity - passengersCount);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
@@ -51,7 +52,6 @@ export const buyTicket = {
     } finally {
       client.release();
     }
-    await updateCapacity(layout_id, flight_class, capacity - passengersCount);
 
     res.status(200).json({ success: true });
   },
