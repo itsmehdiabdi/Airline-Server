@@ -196,7 +196,7 @@ func Logout(c *gin.Context) {
 		UserID:     user.ID,
 		User:       user,
 		Token:      cookie,
-		Expiration: time.Now().Add(time.Hour * 24), // TODO: use claims["exp"]
+		Expiration: time.Unix(int64(claims["exp"].(float64)), 0),
 	}
 
 	result := initializers.DB.Create(&unauthorizedToken)
