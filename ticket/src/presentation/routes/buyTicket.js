@@ -11,7 +11,7 @@ export const buyTicket = {
     let { flight_serial, flight_class, passengers, transaction_id } = req.body;
     let { id, firstName, lastName } = req.userinfo;
     if (!flight_serial || !flight_class || !passengers)
-      throw new APIError("undefined input");
+      throw new APIError("undefined input", 400);
 
     passengers.push({ first_name: firstName, last_name: lastName });
     const passengersCount = passengers.length;
@@ -28,7 +28,7 @@ export const buyTicket = {
       await client.query("BEGIN");
       for (const passenger of passengers) {
         if (!(!!passenger.first_name && !!passenger.last_name))
-          throw new APIError("invalid passenger");
+          throw new APIError("invalid passenger", 400);
         const insertPurchaseQueryText = `
           INSERT INTO purchase
           (corresponding_user_id, first_name, last_name, flight_serial, offer_price, offer_class, transaction_id)
@@ -64,7 +64,7 @@ export const buyTicket = {
 const getFlightClass = (flightClass) => {
   flightClass = flightClass.toLowerCase();
   if (!["y", "f", "j"].includes(flightClass))
-    throw new APIError("invalid flight_class");
+    throw new APIError("invalid flight_class", 400);
   return flightClass;
 };
 
@@ -88,22 +88,22 @@ const getFlightInfo = async (flightSerial, flightClass) => {
 };
 
 const validateTransactionId = async (transaction_id) => {
-  if (!+transaction_id) throw new APIError("invalid transaction id");
+  if (!+transaction_id) throw new APIError("invalid transaction id", 400);
 
   const countOfTransactionUse = (
     await db.query("SELECT COUNT(*) FROM purchase WHERE transaction_id=$1", [
       transaction_id,
     ])
   ).rows[0].count;
-  if (countOfTransactionUse > 0) throw new APIError("invalid transaction id");
+  if (countOfTransactionUse > 0) throw new APIError("invalid transaction id", 400);
 
   let result;
   try {
     result = await axios.get(`${envVars.BANK_URL}/payment/${transaction_id}`);
   } catch (error) {
-    throw new APIError("invalid transaction id");
+    throw new APIError("invalid transaction id", 400);
   }
-  if (result.status != 200) throw new APIError("invalid transaction id");
+  if (result.status != 200) throw new APIError("invalid transaction id", 400);
 };
 
 const updateCapacity = async (layoutId, flightClass, newCapacity) => {
