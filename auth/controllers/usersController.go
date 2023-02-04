@@ -120,14 +120,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Create a new JWT token
+	// Create refresh token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": user.ID,
 		"exp":    time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	tokenString, err := token.SignedString([]byte(os.Getenv("REFRESH_JWT_SECRET")))
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while signing token"})
@@ -142,14 +142,14 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user logged in successfully"})
 }
 
-func GetUser(c *gin.Context) {
+func Refresh(c *gin.Context) {
 	// Get the cookie from the request
 	cookie, _ := c.Cookie("token")
 
 	// Parse the token
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(cookie, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(os.Getenv("REFRESH_JWT_SECRET")), nil
 	})
 
 	if err != nil {
@@ -174,6 +174,39 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	// Create access token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userId": claims["userId"],
+		"exp":    time.Now().Add(time.Minute * 15).Unix(),
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(os.Getenv("ACCESS_JWT_SECRET")))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while signing token"})
+		return
+	}
+
+	// Return the access token
+	c.JSON(http.StatusOK, gin.H{"access_token": tokenString})
+}
+
+func GetUser(c *gin.Context) {
+	// Get the token from the request header
+	token := c.GetHeader("Authorization")
+
+	// Parse the token
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("ACCESS_JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	// Get the user account from the database
 	userId := claims["userId"].(float64)
 	var user models.UserAccount
@@ -190,7 +223,7 @@ func Logout(c *gin.Context) {
 	// Get the user account from the database
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(cookie, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(os.Getenv("REFRESH_JWT_SECRET")), nil
 	})
 
 	if err != nil {
@@ -207,7 +240,7 @@ func Logout(c *gin.Context) {
 		UserID:     user.ID,
 		User:       user,
 		Token:      cookie,
-		Expiration: time.Unix(int64(claims["exp"].(float64)), 0),
+		Expiration: time.Now().Add(time.Hour * 24),
 	}
 
 	result := initializers.DB.Create(&unauthorizedToken)

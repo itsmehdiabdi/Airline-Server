@@ -19,6 +19,7 @@ func main() {
 	// Routes
 	r.POST("/api/signup", controllers.Signup)
 	r.POST("/api/login", controllers.Login)
+	r.POST("/api/refresh", controllers.Refresh)
 	r.GET("/api/user", controllers.GetUser)
 	r.DELETE("/api/logout", controllers.Logout)
 
