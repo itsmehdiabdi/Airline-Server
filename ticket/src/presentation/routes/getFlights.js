@@ -43,7 +43,7 @@ export const getFlights = {
     FROM aircraft INNER JOIN aircraft_layout ON 
     aircraft.layout_id = aircraft_layout.layout_id INNER JOIN flight
     ON registration = flight.aircraft
-    WHERE origin = $1 AND destination = $2 AND departure_utc = $3`;
+    WHERE origin = $1 AND destination = $2 AND date(departure_utc) = $3`;
     values.push(dep, des, from);
    
      if (passengers) {
@@ -62,7 +62,7 @@ export const getFlights = {
     FROM aircraft INNER JOIN aircraft_layout ON 
     aircraft.layout_id = aircraft_layout.layout_id INNER JOIN flight
     ON registration = flight.aircraft
-    WHERE origin = $1 AND destination = $2 AND departure_utc = $3`;
+    WHERE origin = $1 AND destination = $2 AND date(departure_utc) = $3`;
     values = [];
     values.push(des, dep, to);
     
