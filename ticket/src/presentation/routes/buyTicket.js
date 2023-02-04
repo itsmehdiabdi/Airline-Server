@@ -13,7 +13,11 @@ export const buyTicket = {
     if (!flight_serial || !flight_class || !passengers)
       throw new APIError("undefined input", 400);
 
-    passengers.push({ first_name: firstName, last_name: lastName });
+    passengers.push({
+      first_name: firstName,
+      last_name: lastName,
+      title: req.userinfo.male ? "mr" : "ms",
+    });
     const passengersCount = passengers.length;
     flight_class = getFlightClass(flight_class);
     const [flight_price, capacity, layout_id] = await getFlightInfo(
@@ -27,12 +31,22 @@ export const buyTicket = {
     try {
       await client.query("BEGIN");
       for (const passenger of passengers) {
-        if (!(!!passenger.first_name && !!passenger.last_name))
+        if (
+          !(
+            !!passenger.first_name &&
+            !!passenger.last_name &&
+            !!passenger.title
+          )
+        )
+          throw new APIError("invalid passenger", 400);
+
+        const title = passenger.title.toLowerCase();
+        if (!["mr", "ms"].includes(title))
           throw new APIError("invalid passenger", 400);
         const insertPurchaseQueryText = `
           INSERT INTO purchase
-          (corresponding_user_id, first_name, last_name, flight_serial, offer_price, offer_class, transaction_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          (corresponding_user_id, first_name, last_name, flight_serial, offer_price, offer_class, transaction_id, title)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `;
         const insertPurchaseQueryValues = [
           id,
@@ -42,6 +56,7 @@ export const buyTicket = {
           flight_price,
           flight_class,
           transaction_id,
+          title,
         ];
         const insertPurchaseQueryResult = await client.query(
           insertPurchaseQueryText,
@@ -95,7 +110,8 @@ const validateTransactionId = async (transaction_id) => {
       transaction_id,
     ])
   ).rows[0].count;
-  if (countOfTransactionUse > 0) throw new APIError("invalid transaction id", 400);
+  if (countOfTransactionUse > 0)
+    throw new APIError("invalid transaction id", 400);
 
   let result;
   try {
