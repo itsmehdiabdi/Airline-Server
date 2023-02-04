@@ -8,9 +8,7 @@ let { Pool } = pg;
 let dbUrl = envVars.DB_URL;
 let db = new Pool({
   connectionString: dbUrl,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: false
 });
 const sqlPath = "./ticket.sql";
 const __filename = fileURLToPath(import.meta.url);
