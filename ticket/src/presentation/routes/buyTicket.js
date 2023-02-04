@@ -1,12 +1,14 @@
+import axios from "axios";
 import db from "../../database/db.js";
 import APIError from "../../utils/api-error.js";
+import envVars from "../../utils/env.js";
 
 export const buyTicket = {
   endpoint: "ticket",
   method: "POST",
   private: true,
   handler: async (req, res) => {
-    let { flight_serial, flight_class, passengers } = req.body;
+    let { flight_serial, flight_class, passengers, transaction_id } = req.body;
     let { id, firstName, lastName } = req.userinfo;
     if (!flight_serial || !flight_class || !passengers)
       throw new APIError("undefined input");
@@ -18,6 +20,7 @@ export const buyTicket = {
       flight_serial,
       flight_class
     );
+    await validateTransactionId(transaction_id);
     if (capacity < passengersCount) throw new APIError("low capacity", 410);
 
     const client = await db.connect();
@@ -28,8 +31,8 @@ export const buyTicket = {
           throw new APIError("invalid passenger");
         const insertPurchaseQueryText = `
           INSERT INTO purchase
-          (corresponding_user_id, first_name, last_name, flight_serial, offer_price, offer_class)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          (corresponding_user_id, first_name, last_name, flight_serial, offer_price, offer_class, transaction_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
         const insertPurchaseQueryValues = [
           id,
@@ -38,6 +41,7 @@ export const buyTicket = {
           flight_serial,
           flight_price,
           flight_class,
+          transaction_id,
         ];
         const insertPurchaseQueryResult = await client.query(
           insertPurchaseQueryText,
@@ -81,6 +85,25 @@ const getFlightInfo = async (flightSerial, flightClass) => {
   const result = Object.values(getFlightPriceResult.rows[0]);
   if (result.length === 0) throw new APIError("flight not found", 400);
   return result;
+};
+
+const validateTransactionId = async (transaction_id) => {
+  if (!+transaction_id) throw new APIError("invalid transaction id");
+
+  const countOfTransactionUse = (
+    await db.query("SELECT COUNT(*) FROM purchase WHERE transaction_id=$1", [
+      transaction_id,
+    ])
+  ).rows[0].count;
+  if (countOfTransactionUse > 0) throw new APIError("invalid transaction id");
+
+  let result;
+  try {
+    result = await axios.get(`${envVars.BANK_URL}/payment/${transaction_id}`);
+  } catch (error) {
+    throw new APIError("invalid transaction id");
+  }
+  if (result.status != 200) throw new APIError("invalid transaction id");
 };
 
 const updateCapacity = async (layoutId, flightClass, newCapacity) => {

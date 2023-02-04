@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS purchase
     -- TODO: transactions
 );
 
+ALTER TABLE purchase ADD COLUMN IF NOT EXISTS transaction_id INTEGER;
+
 -- OFFERS
 
 CREATE OR REPLACE VIEW available_offers AS
