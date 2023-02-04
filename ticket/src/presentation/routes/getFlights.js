@@ -13,6 +13,22 @@ export const getFlights = {
       flights1, flights2,
       values = [];
 
+    if (!dep || !des || !from) {
+      throw new APIError("parameters \'start city (dep)\', \'destination (des)\' and \'begining time (from)\' are neede!");
+    }
+
+    if (! from.match("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]$")) {
+      throw new APIError("parameter \'begining time (from)\' should be a date like \'2023-01-01\'");
+    }
+
+    if (to && ! to.match("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]$")) {
+      throw new APIError("parameter \'ending time (to)\' should be a date like \'2023-01-01\'");
+    }
+
+    if (passengers && isNaN(Number(passengers))) {
+      throw new APIError("the parameter \'passengers\' should be a number!");
+    }
+
     if (to && to <= from) {
       throw new APIError("the \'to\' time should be greater than the \'from\' time!");
     }
@@ -29,16 +45,7 @@ export const getFlights = {
     ON registration = flight.aircraft
     WHERE origin = $1 AND destination = $2 AND departure_utc = $3`;
     values.push(dep, des, from);
-    // if (to && passengers) {
-    //   queryText += ` AND departure_utc+duration = $4`;
-    //   queryText += ` AND y_class_capacity + j_class_capacity + f_class_capacity >= $5`;
-    //   values.push(to, passengers);
-    // }
-    // else if (to) {
-    //   queryText += ` AND departure_utc+duration = $4`;
-    //   values.push(to);
-    // }
-    // else
+   
      if (passengers) {
       queryText += ` AND y_class_capacity + j_class_capacity + f_class_capacity >= $4`;
       values.push(passengers);
@@ -58,7 +65,7 @@ export const getFlights = {
     WHERE origin = $1 AND destination = $2 AND departure_utc = $3`;
     values = [];
     values.push(des, dep, to);
-    }
+    
 
     if (passengers) {
       queryText += ` AND y_class_capacity + j_class_capacity + f_class_capacity >= $4`;
@@ -67,7 +74,9 @@ export const getFlights = {
 
     queryResult = await db.query(queryText, values);
     flights2 = queryResult.rows;
-
     res.status(200).json(flights1, flights2);
+  } else {
+    res.status(200).json(flights1);
+  }
   },
 };
