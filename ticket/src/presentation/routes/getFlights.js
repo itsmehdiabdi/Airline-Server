@@ -68,6 +68,6 @@ export const getFlights = {
     queryResult = await db.query(queryText, values);
     flights2 = queryResult.rows;
 
-    res.status(200).json(flights, flights2);
+    res.status(200).json(flights1, flights2);
   },
 };
