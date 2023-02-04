@@ -6,15 +6,18 @@ export const getUserInfo = {
   method: "GET",
   private: true,
   handler: async (req, res) => {
-    let {corresponding_user_id} = req.query;
     let queryText,
       queryResult,
       info,
       values = [];
+    info = {
+      user: req.userinfo,
+      purchases: [],
+    };
     queryText = "SELECT * FROM purchase WHERE corresponding_user_id = $1";
-    values.push(corresponding_user_id);
+    values.push(req.userinfo.id);
     queryResult = await db.query(queryText, values);
-    info = queryResult.rows;
+    info.purchases = queryResult.rows;
     res.status(200).json(info);
   },
 };

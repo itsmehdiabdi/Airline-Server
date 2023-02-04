@@ -19,18 +19,19 @@ export const getFlights = {
     aircraft.layout_id = aircraft_layout.layout_id INNER JOIN flight
     ON registration = flight.aircraft
     WHERE origin = $1 AND destination = $2 AND departure_utc >= $3`;
+    values.push(dep, des, from);
     if (to && passengers) {
       queryText += ` AND departure_utc+duration < $4`;
       queryText += ` AND y_class_capacity + j_class_capacity + f_class_capacity >= $5`;
-      values.push(dep, des, from, to, passengers);
+      values.push(to, passengers);
     }
     else if (to) {
       queryText += ` AND departure_utc+duration < $4`;
-      values.push(dep, des, from, to);
+      values.push(to);
     }
     else if (passengers) {
       queryText += ` AND y_class_capacity + j_class_capacity + f_class_capacity >= $4`;
-      values.push(dep, des, from, passengers);
+      values.push(passengers);
     }
 
     queryResult = await db.query(queryText, values);

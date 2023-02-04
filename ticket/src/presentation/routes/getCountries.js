@@ -9,11 +9,15 @@ export const getCountries = {
     let queryText,
       queryResult,
       countries,
-      values = [];
-    queryText = "SELECT * FROM country ORDER BY country_name ASC" ;
+      values = [],
+      response = [];
+    queryText = "SELECT * FROM country ORDER BY country_name ASC";
     queryResult = await db.query(queryText, values);
     countries = queryResult.rows;
+    countries.forEach((country) => {
+      response.push(country.country_name);
+    });
 
-    res.status(200).json(countries);
+    res.status(200).json(response);
   },
 };
