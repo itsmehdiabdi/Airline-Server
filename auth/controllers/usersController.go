@@ -3,14 +3,18 @@ package controllers
 import (
 	"auth/initializers"
 	"auth/models"
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 )
+
+var ctx = context.Background()
 
 func Signup(c *gin.Context) {
 	// Get the user's data from the request body
@@ -142,6 +146,14 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	// Check Redis cache for unauthorized tokens
+	_, err = initializers.RedisClient.Get(ctx, cookie).Result()
+
+	if err != redis.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized token"})
+		return
+	}
+
 	// check unauthorized tokens table
 	var unauthorizedToken models.UnauthorizedToken
 	initializers.DB.Where("token = ?", cookie).First(&unauthorizedToken)
@@ -193,6 +205,10 @@ func Logout(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while logging out"})
 		return
 	}
+
+	// Store the token in the redis cache
+	redisClient := initializers.RedisClient
+	redisClient.Set(ctx, cookie, "true", time.Hour*24)
 
 	// Delete the cookie
 	c.SetSameSite(http.SameSiteLaxMode)
