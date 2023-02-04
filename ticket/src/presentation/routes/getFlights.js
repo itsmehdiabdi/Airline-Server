@@ -74,9 +74,9 @@ export const getFlights = {
 
     queryResult = await db.query(queryText, values);
     flights2 = queryResult.rows;
-    res.status(200).json(flights1, flights2);
+    res.status(200).json({outband: flights1, return: flights2});
   } else {
-    res.status(200).json(flights1);
+    res.status(200).json({outband: flights1});
   }
   },
 };
