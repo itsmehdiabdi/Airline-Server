@@ -33,6 +33,17 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	// Check if the user already exists
+	var users models.UserAccount
+	emailCheck := initializers.DB.Where("email = ?", body.Email).First(&users)
+	phoneNumberCheck := initializers.DB.Where("phone_number = ?", body.PhoneNumber).First(&users)
+
+	// If the user already exists, return an error
+	if emailCheck.RowsAffected != 0 || phoneNumberCheck.RowsAffected != 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
+		return
+	}
+
 	// hash the user's password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
