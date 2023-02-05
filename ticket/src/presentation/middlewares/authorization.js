@@ -10,7 +10,7 @@ export const authorizationMiddleware = async (req, res, next) => {
   try {
     result = await axios.get(`${envVars.AUTH_URL}/user`, {
       headers: {
-        Cookie: `token=${token}`,
+        Authorization: token,
       },
     });
   } catch (e) {
